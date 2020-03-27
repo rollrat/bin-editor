@@ -10,6 +10,7 @@ namespace Tests
 	{
 		public static Stream GetBinaryStream(string name)
 		{
+            return new FileStream("test/1. Hello World/a.out", FileMode.Open);
             return typeof(Utilities).Assembly.GetManifestResourceStream(ResourcesPrefix + name);
         }
 

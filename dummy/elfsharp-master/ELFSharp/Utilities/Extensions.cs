@@ -5,7 +5,7 @@ namespace ELFSharp.Utilities
 {
     internal static class Extensions
     {
-        public static byte[] ReadBytesOrThrow(this Stream stream, int count)
+        public static byte[] ReadBytesOrThrow(this Stream stream, int count, int offset = 0)
         {
             var result = new byte[count];
             while(count > 0)

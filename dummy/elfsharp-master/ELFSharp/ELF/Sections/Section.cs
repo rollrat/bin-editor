@@ -14,7 +14,7 @@ namespace ELFSharp.ELF.Sections
 
         public virtual byte[] GetContents()
         {
-            return Reader.ReadBytes(Convert.ToInt32(Header.Size));
+            return Reader.ReadBytes(Convert.ToInt32(Header.Size), Header.Offset);
         }
 
         public string Name

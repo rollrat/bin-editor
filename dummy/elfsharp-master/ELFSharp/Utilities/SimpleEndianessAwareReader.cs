@@ -28,6 +28,12 @@ namespace ELFSharp.Utilities
             return stream.ReadBytesOrThrow(count);
         }
 
+        public byte[] ReadBytes(int count, ulong offset)
+        {
+            stream.Position = (long)offset;
+            return stream.ReadBytesOrThrow(count);
+        }
+
         public byte ReadByte()
         {
             var result = stream.ReadByte();

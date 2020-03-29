@@ -26,6 +26,31 @@ namespace linux_recompiler
             ELF = ELFReader.Load(fs, false);
             Functions = new List<(ISymbolEntry, List<Instruction>)>();
 
+            if (ELF.Sections.Any(x => x.Name == ".symtab"))
+                symbol_table_exists();
+
+        }
+
+        ~Target()
+        {
+            fs.Close();
+        }
+
+        static List<Instruction> disasm(byte[] bytes)
+        {
+            ArchitectureMode mode = ArchitectureMode.x86_64;
+            var disasm = new Disassembler(
+                bytes,
+                mode, 0, true);
+
+            Disassembler.Translator.IncludeAddress = true;
+            Disassembler.Translator.IncludeBinary = true;
+
+            return disasm.Disassemble().ToList();
+        }
+
+        void symbol_table_exists()
+        {
             var funcs = ((ISymbolTable)ELF.GetSection(".symtab")).Entries.Where(x => x.Type == SymbolType.Function).ToList();
             var symfuncs = new Dictionary<ulong, ISymbolEntry>();
             var symextern = new List<ISymbolEntry>();
@@ -35,13 +60,13 @@ namespace linux_recompiler
                     symfuncs.Add(os, x);
                 else
                     symextern.Add(x);
-                });
+            });
 
             var insts = disasm(ELF.GetSection(".text").GetContents()).ToList();
             var symbols = symfuncs.ToList();
             var symbols_index = 0;
             ulong base_offset = (ELF.GetSection(".text") as Section<ulong>).Offset;
-            symbols.Sort((x,y) => x.Key.CompareTo(y.Key));
+            symbols.Sort((x, y) => x.Key.CompareTo(y.Key));
             symbols.Add(new KeyValuePair<ulong, ISymbolEntry>(ulong.MaxValue, null));
 
             //foreach (var func in funcs)
@@ -52,7 +77,7 @@ namespace linux_recompiler
 
             var added = new HashSet<ISymbolEntry>();
 
-            for (int i = 0; i < insts.Count; )
+            for (int i = 0; i < insts.Count;)
             {
                 if (insts[i].Offset + base_offset == symbols[symbols_index].Key)
                 {
@@ -83,7 +108,7 @@ namespace linux_recompiler
             }
 
             symbols.RemoveAt(symbols.Count - 1);
-            Functions.Add((symbols.Where(x => x.Value.Name == "_init").Single().Value, 
+            Functions.Add((symbols.Where(x => x.Value.Name == "_init").Single().Value,
                 disasm(ELF.GetSection(".init").GetContents()).ToList()));
             added.Add(symbols.Where(x => x.Value.Name == "_init").Single().Value);
 
@@ -93,25 +118,6 @@ namespace linux_recompiler
                     Functions.Add((ise.Value, new List<Instruction>()));
             }
 
-            ;
-        }
-
-        ~Target()
-        {
-            fs.Close();
-        }
-
-        static List<Instruction> disasm(byte[] bytes)
-        {
-            ArchitectureMode mode = ArchitectureMode.x86_64;
-            var disasm = new Disassembler(
-                bytes,
-                mode, 0, true);
-
-            Disassembler.Translator.IncludeAddress = true;
-            Disassembler.Translator.IncludeBinary = true;
-
-            return disasm.Disassemble().ToList();
         }
     }
 }
